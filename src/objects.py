@@ -11,13 +11,14 @@ class Obj3d(object):
         self.angleX, self.angleY, self.angleZ = rotation
         self.x, self.y, self.z = position
 
-    def place(self):
-        glPushMatrix()
+    def render(self):
+        glPushMatrix() # Permitir que as transformações ocorram apenas neste objeto
         glColor3f(*self.color)
-        glRotatef(self.angleX, 1.0, 1.0, 0.0)
-        glRotatef(self.angleY, 0.0, 1.0, 0.0)
-        glRotatef(self.angleZ, 0.0, 0.0, 1.0)
-        glTranslatef(self.x, self.y, self.z)
+        glTranslatef(0,0,0) # Vai para o centro do eixo
+        glRotatef(self.angleX, 0, 1, 0) # Rotaciona em torno do eixo X
+        glRotatef(self.angleY, -1, 0, 0) # Rotaciona em torno do eixo Y
+        glRotatef(self.angleZ, 0, 0, 1) # Rotaciona em torno do eixo Z
+        glTranslatef(self.x, self.y, self.z)  # A partir do centro, desloca-se para o destino
         self.draw()
         glPopMatrix()
     
@@ -33,6 +34,7 @@ class Ball(Obj3d):
         self.stacks = stacks
     
     def draw(self):
+        glLightfv(GL_LIGHT0, GL_POSITION, (self.x, self.y, self.z, 1))
         glutSolidSphere(self.radius, self.slices, self.stacks)
 
         
@@ -44,37 +46,31 @@ class Cube(Obj3d):
     def draw(self):
         w, h, d = self.w, self.h, self.d
         glBegin(GL_QUADS)
-        # glColor3f(1.0, 0.0, 0.0)
         glVertex3f( w, h, d)
         glVertex3f(-w, h, d)
         glVertex3f(-w, -h, d)
         glVertex3f( w, -h, d)
 
-        # glColor3f(0.0, 1.0, 0.0)
         glVertex3f( w, h, -d)
         glVertex3f(-w, h, -d)
         glVertex3f(-w, -h, -d)
         glVertex3f( w, -h, -d)
 
-        # glColor3f(0.0, 0.0, 1.0)
         glVertex3f( w, h, d)
         glVertex3f( w, h, -d)
         glVertex3f( w, -h, -d)
         glVertex3f( w, -h, d)
 
-        # glColor3f(1.0, 1.0, 0.0)
         glVertex3f(-w, h, d)
         glVertex3f(-w, h, -d)
         glVertex3f(-w, -h, -d)
         glVertex3f(-w, -h, d)
 
-        # glColor3f(1.0, 0.0, 1.0)
         glVertex3f( w, h, d)
         glVertex3f( w, h, -d)
         glVertex3f(-w, h, -d)
         glVertex3f(-w, h, d)
 
-        # glColor3f(0.0, 1.0, 1.0)
         glVertex3f( w, -h, d)
         glVertex3f( w, -h, -d)
         glVertex3f(-w, -h, -d)
@@ -85,40 +81,39 @@ class Cube(Obj3d):
 class Table(Cube):
     def __init__(self, color, rotation, position, dimension):
         super().__init__(color, rotation, position, dimension)
-        
         self.table = Cube(color, rotation, position, dimension)
 
-        x, y, z = self.table.x, self.table.y, self.table.z
-        w, h, d = self.table.w, self.table.h, self.table.d
+        x, y, z = position
+        w, h, d = dimension
 
         # ARRUMAR ESSAS POSIÇÕES
         border_w, border_h, border_d = 0.2, 0.2, 0.2
-        dx_border, dy_border, dz_border = border_w+w/2, border_h+h/2, border_d+d/2
-        self.border_top =    Cube(colors.TABLE_BORDER, rotation, (x, y+dy_border, z-dz_border), (w, border_h, border_d))
-        self.border_left =   Cube(colors.TABLE_BORDER, rotation, (x-dx_border, y, z-dz_border), (border_w, h, border_d))
-        self.border_right =  Cube(colors.TABLE_BORDER, rotation, (x+dx_border, y, z-dz_border), (border_w, h, border_d))
-        self.border_bottom = Cube(colors.TABLE_BORDER, rotation, (x, y-dy_border, z-dz_border), (w, border_h, border_d))
+        dx_border, dy_border, dz_border = border_w/2+w, border_h/2+h, border_d/2+d
+        self.border_top =    Cube(colors.TABLE_BORDER, rotation, (x, y+dy_border, z+dz_border), (w, border_h, border_d))
+        self.border_left =   Cube(colors.TABLE_BORDER, rotation, (x-dx_border, y, z+dz_border), (border_w, h, border_d))
+        self.border_right =  Cube(colors.TABLE_BORDER, rotation, (x+dx_border, y, z+dz_border), (border_w, h, border_d))
+        self.border_bottom = Cube(colors.TABLE_BORDER, rotation, (x, y-dy_border, z+dz_border), (w, border_h, border_d))
 
         leg_w, leg_h, leg_d = 0.3, 0.3, 2
-        dx_leg, dy_leg, dz_leg = w+leg_w, h+leg_h, d+leg_d
+        dx_leg, dy_leg, dz_leg = w+leg_w/2, h+leg_h/2, d+leg_d/2
         leg_top_left =     Cube(colors.TABLE_LEG, rotation, (x-dx_leg, y+dy_leg, z-dz_leg), (leg_w, leg_h, leg_d))
         leg_top_right =    Cube(colors.TABLE_LEG, rotation, (x+dx_leg, y+dy_leg, z-dz_leg), (leg_w, leg_h, leg_d))
         leg_bottom_left =  Cube(colors.TABLE_LEG, rotation, (x-dx_leg, y-dy_leg, z-dz_leg), (leg_w, leg_h, leg_d))
         leg_bottom_right = Cube(colors.TABLE_LEG, rotation, (x+dx_leg, y-dy_leg, z-dz_leg), (leg_w, leg_h, leg_d))
 
-        self.legs = []#[leg_bottom_left, leg_bottom_right, leg_top_left, leg_top_right]
+        self.legs = [leg_bottom_left, leg_bottom_right, leg_top_left, leg_top_right]
         self.borders = [self.border_top, self.border_bottom, self.border_right, self.border_left]
 
         self.objects = self.legs + self.borders + [self.table]
     
-    def draw(self):
+    def render(self):
         for obj in self.objects:
-            obj.place()
+            obj.render()
 
 
 class Scene(Obj3d):
-    def __init__(self, table:Table, ball:Ball, player1:Cube, player2:Cube):
-        super().__init__([0]*3, [0]*3, [0]*3)
+    def __init__(self, rotation, table:Table, ball:Ball, player1:Cube, player2:Cube):
+        super().__init__([0]*3, rotation, [0]*3)
 
         self.table = table
         self.ball = ball
@@ -128,8 +123,8 @@ class Scene(Obj3d):
         self.objects = [self.table, self.ball, self.player1, self.player2]
     
     def draw(self):
-        self.angleX += 0.01
-        self.angleY += 0.01
-        self.angleZ += 0.01
+        # self.angleX += 0.01
+        # self.angleY += 0.01
+        # self.angleZ += 0.01
         for obj in self.objects:
-            obj.place()
+            obj.render()
