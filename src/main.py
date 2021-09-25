@@ -57,11 +57,9 @@ def renderScene():
         0, 1, 0   # Camera olha para cima
     )
 
-    limit_top, limit_bottom = scene.table.border_top.y, scene.table.border_bottom.y
-    limit_left, limit_right = scene.table.border_left.x, scene.table.border_right.x
-    if scene.ball.y >= limit_top/2 or scene.ball.y <= limit_bottom/2: # GAMBIARRA!, ERA PRA SER AS COORDENADAS DAS PAREDES DA MESA, POREM A PROJEÇÃO DA MESA MUDA COORDENADA
+    if scene.ballHittedTopBorder() or scene.ballHittedBottomBorder():
         dy = -dy
-    if scene.ball.x >= limit_right/2 or scene.ball.x <=limit_left/2:
+    if scene.ballHittedLeftBorder() or scene.ballHittedRightBorder():
         dx = -dx
 
     scene.ball.x += dx
