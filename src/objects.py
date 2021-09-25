@@ -15,7 +15,7 @@ class Obj3d(object):
 
     def render(self):
         glPushMatrix() # Permitir que as transformações ocorram apenas neste objeto
-        glColor3f(*self.color)
+        glColor4f(*self.color)
         glTranslatef(0,0,0) # Vai para o centro do eixo
         glRotatef(self.angleX, 0, 1, 0) # Rotaciona em torno do eixo X
         glRotatef(self.angleY, -1, 0, 0) # Rotaciona em torno do eixo Y
@@ -45,20 +45,20 @@ class Ball(Obj3d):
         glutSolidSphere(self.radius, self.slices, self.stacks)
     
     def set_light_configs(self):
-        # glMaterialfv(GL_FRONT, GL_EMISSION, colors.BALL)
-        glMaterialfv(GL_FRONT, GL_SPECULAR, (1, 1, 1, 1))
-        glMaterialfv(GL_FRONT, GL_SHININESS, 50)
-        glLightfv(GL_LIGHT0, GL_SPECULAR, colors.BALL)
+        glMaterialfv(GL_FRONT, GL_SPECULAR, (0.8, 0.8, 0.8, 1))
+        glMaterialfv(GL_FRONT, GL_DIFFUSE, self.color)
+        glMaterialfv(GL_FRONT, GL_SHININESS, 80)
         glLightfv(GL_LIGHT0, GL_POSITION, (self.abs_x, self.abs_y, self.abs_z, 1))
 
         
 class Cube(Obj3d):
     def __init__(self, color, rotation, position, dimension):
         super().__init__(color, rotation, position)
-        self.w, self.h, self.d = dimension
+        self.w, self.h, self.d = dimension # Largura, Altura Profundidade
     
     def set_light_configs(self):
-        glMaterialfv(GL_FRONT, GL_DIFFUSE, (1, 1, 1, 1))
+        glMaterialfv(GL_FRONT, GL_SPECULAR, colors.LIGHT_SPECULAR)
+        glMaterialfv(GL_FRONT, GL_DIFFUSE, self.color)
         glMaterialfv(GL_FRONT, GL_SHININESS, 50)
 
     def draw(self):
@@ -113,12 +113,12 @@ class Table(Cube):
 
         leg_w, leg_h, leg_d = 0.3, 0.3, 2
         dx_leg, dy_leg, dz_leg = w+leg_w/2, h+leg_h/2, d+leg_d/2
-        leg_top_left =     Cube(colors.TABLE_LEG, rotation, (x-dx_leg, y+dy_leg, z-dz_leg), (leg_w, leg_h, leg_d))
-        leg_top_right =    Cube(colors.TABLE_LEG, rotation, (x+dx_leg, y+dy_leg, z-dz_leg), (leg_w, leg_h, leg_d))
-        leg_bottom_left =  Cube(colors.TABLE_LEG, rotation, (x-dx_leg, y-dy_leg, z-dz_leg), (leg_w, leg_h, leg_d))
-        leg_bottom_right = Cube(colors.TABLE_LEG, rotation, (x+dx_leg, y-dy_leg, z-dz_leg), (leg_w, leg_h, leg_d))
+        self.leg_top_left =     Cube(colors.TABLE_LEG, rotation, (x-dx_leg, y+dy_leg, z-dz_leg), (leg_w, leg_h, leg_d))
+        self.leg_top_right =    Cube(colors.TABLE_LEG, rotation, (x+dx_leg, y+dy_leg, z-dz_leg), (leg_w, leg_h, leg_d))
+        self.leg_bottom_left =  Cube(colors.TABLE_LEG, rotation, (x-dx_leg, y-dy_leg, z-dz_leg), (leg_w, leg_h, leg_d))
+        self.leg_bottom_right = Cube(colors.TABLE_LEG, rotation, (x+dx_leg, y-dy_leg, z-dz_leg), (leg_w, leg_h, leg_d))
 
-        self.legs = [leg_bottom_left, leg_bottom_right, leg_top_left, leg_top_right]
+        self.legs = [self.leg_bottom_left, self.leg_bottom_right, self.leg_top_left, self.leg_top_right]
         self.borders = [self.border_top, self.border_bottom, self.border_right, self.border_left]
 
         self.objects = self.legs + self.borders + [self.table]
@@ -129,23 +129,27 @@ class Table(Cube):
 
 
 class Scene(Obj3d):
-    def __init__(self, rotation, table:Table, ball:Ball, player1:Cube, player2:Cube):
-        super().__init__([0]*3, rotation, [0]*3)
+    def __init__(self, rotation, position, table:Table, ball:Ball):
+        super().__init__([0]*4, rotation, position)
+        x, y, z = position
 
         table.limit_top = table.border_top.abs_y - table.border_top.h - ball.radius
         table.limit_bottom = table.border_bottom.abs_y + table.border_bottom.h + ball.radius
-        table.limit_left = table.border_left.abs_x + table.border_left.w + 2 * ball.radius # Não sei pq nos lados precisou de 2*r e em cima não
-        table.limit_right = table.border_right.abs_x - table.border_right.w - 2 * ball.radius
+        table.limit_left = table.border_left.abs_x + table.border_left.w + ball.radius
+        table.limit_right = table.border_right.abs_x - table.border_right.w - ball.radius
+        table.limit_leg = table.leg_bottom_left.z - table.leg_bottom_left.d
 
         self.table = table
         self.ball = ball
-        self.player1 = player1
-        self.player2 = player2
+        self.player1 = Cube(colors.PLAYER1, (0, 0, 0), (table.limit_left,  y, z+.6), (0.1, 0.4, 0.1))
+        self.player2 = Cube(colors.PLAYER2, (0, 0, 0), (table.limit_right, y, z+.6), (0.1, 0.4, 0.1))
 
-        self.objects = [self.table, self.ball, self.player1, self.player2]
+        self.ground = Cube(colors.GROUND,   (0, 0, 0), (x, y, z-abs(table.limit_leg)-0.1), (25, 25, 0.1))
+
+        self.objects = [self.table, self.ball, self.player1, self.player2, self.ground]
 
     def draw(self):
-        # self.angleX += 0.01
+        self.angleX += 0.01
         # self.angleY += 0.01
         # self.angleZ += 0.01
         for obj in self.objects:
