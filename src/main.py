@@ -56,6 +56,11 @@ def renderScene():
         dy = -dy
     if scene.ballHittedLeftBorder() or scene.ballHittedRightBorder():
         dx = -dx
+    if scene.playerTwoHitBall() or scene.playerOneHitBall():
+        dx = -dx
+    # Jogadores recebem a mesma coordenada da bola em y
+    scene.player1.y = scene.ball.abs_y
+    scene.player2.y = scene.ball.abs_y
 
     scene.ball.x += dx
     scene.ball.y += dy

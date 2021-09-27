@@ -163,3 +163,7 @@ class Scene(Obj3d):
         return self.ball.abs_x <= self.table.limit_left
     def ballHittedRightBorder(self) -> bool:
         return self.ball.abs_x >= self.table.limit_right
+    def playerTwoHitBall(self)->bool:
+        return self.ball.abs_x >= self.table.limit_right - 0.4
+    def playerOneHitBall(self)->bool:
+        return self.ball.abs_x <= self.table.limit_left + 0.4
