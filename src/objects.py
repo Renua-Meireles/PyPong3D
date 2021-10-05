@@ -45,56 +45,21 @@ class Ball(Obj3d):
         glutSolidSphere(self.radius, self.slices, self.stacks)
     
     def set_light_configs(self):
-        glMaterialfv(GL_FRONT, GL_SPECULAR, (0.8, 0.8, 0.8, 1))
-        glMaterialfv(GL_FRONT, GL_DIFFUSE, self.color)
-        glMaterialfv(GL_FRONT, GL_SHININESS, 80)
-        glLightfv(GL_LIGHT0, GL_POSITION, (self.abs_x, self.abs_y, self.abs_z, 1))
+        glMaterialfv(GL_FRONT, GL_SPECULAR, colors.LIGHT_SPECULAR)
+        glMaterialfv(GL_FRONT, GL_DIFFUSE, colors.LIGHT_DIFFUSE)
+        glMaterialfv(GL_FRONT, GL_SHININESS, 50)
+        # glLightfv(GL_LIGHT0, GL_POSITION, (self.x*0.01, self.y*0.01, self.z+2, .2))
 
         
 class Cube(Obj3d):
     def __init__(self, color, rotation, position, dimension):
         super().__init__(color, rotation, position)
         self.w, self.h, self.d = dimension # Largura, Altura Profundidade
-    
-    def set_light_configs(self):
-        glMaterialfv(GL_FRONT, GL_SPECULAR, colors.LIGHT_SPECULAR)
-        glMaterialfv(GL_FRONT, GL_DIFFUSE, self.color)
-        glMaterialfv(GL_FRONT, GL_SHININESS, 50)
 
     def draw(self):
         w, h, d = self.w, self.h, self.d
-        glBegin(GL_QUADS)
-        glVertex3f( w, h, d)
-        glVertex3f(-w, h, d)
-        glVertex3f(-w, -h, d)
-        glVertex3f( w, -h, d)
-
-        glVertex3f( w, h, -d)
-        glVertex3f(-w, h, -d)
-        glVertex3f(-w, -h, -d)
-        glVertex3f( w, -h, -d)
-
-        glVertex3f( w, h, d)
-        glVertex3f( w, h, -d)
-        glVertex3f( w, -h, -d)
-        glVertex3f( w, -h, d)
-
-        glVertex3f(-w, h, d)
-        glVertex3f(-w, h, -d)
-        glVertex3f(-w, -h, -d)
-        glVertex3f(-w, -h, d)
-
-        glVertex3f( w, h, d)
-        glVertex3f( w, h, -d)
-        glVertex3f(-w, h, -d)
-        glVertex3f(-w, h, d)
-
-        glVertex3f( w, -h, d)
-        glVertex3f( w, -h, -d)
-        glVertex3f(-w, -h, -d)
-        glVertex3f(-w, -h, d)
-        glEnd()
-
+        glScalef(2*w, 2*h, 2*d)
+        glutSolidCube(1)
 
 class Table(Cube):
     def __init__(self, color, rotation, position, dimension):
@@ -122,48 +87,72 @@ class Table(Cube):
         self.borders = [self.border_top, self.border_bottom, self.border_right, self.border_left]
 
         self.objects = self.legs + self.borders + [self.table]
+
+        self.limit_top = self.border_top.abs_y - self.border_top.h
+        self.limit_bottom = self.border_bottom.abs_y + self.border_bottom.h
+        self.limit_right = self.border_right.abs_x - self.border_right.w
+        self.limit_left = self.border_left.abs_x + self.border_left.w
+        self.limit_depth = z - dz_leg - leg_d
     
     def render(self):
         for obj in self.objects:
             obj.render()
 
-
 class Scene(Obj3d):
-    def __init__(self, rotation, position, table:Table, ball:Ball):
+    def __init__(self, rotation, position):
         super().__init__([0]*4, rotation, position)
         x, y, z = position
+        
+        r = 0.2
+        self.table =   Table(colors.TABLE,  (0, 0, 0), (x,y, z), (2.5, 1.5, 0.5))
+        self.ball =    Ball(colors.BALL,    (0, 0, 0), (x,y, z+self.table.d+r), radius = r, slices = 20, stacks = 20)
 
-        table.limit_top = table.border_top.abs_y - table.border_top.h - ball.radius
-        table.limit_bottom = table.border_bottom.abs_y + table.border_bottom.h + ball.radius
-        table.limit_left = table.border_left.abs_x + table.border_left.w + ball.radius
-        table.limit_right = table.border_right.abs_x - table.border_right.w - ball.radius
-        table.limit_leg = table.leg_bottom_left.z - table.leg_bottom_left.d
+        w_p, d_p = 0.1, 0.1
+        self.player1 = Cube(colors.PLAYER1, (0, 0, 0), (self.table.limit_left+w_p,  y, z+self.table.d+d_p), (w_p, 0.4, d_p))
+        self.player2 = Cube(colors.PLAYER2, (0, 0, 0), (self.table.limit_right-w_p, y, z+self.table.d+d_p), (w_p, 0.4, d_p))
 
-        self.table = table
-        self.ball = ball
-        self.player1 = Cube(colors.PLAYER1, (0, 0, 0), (table.limit_left,  y, z+.6), (0.1, 0.4, 0.1))
-        self.player2 = Cube(colors.PLAYER2, (0, 0, 0), (table.limit_right, y, z+.6), (0.1, 0.4, 0.1))
+        w_g, d_g = 15, 0.1
+        self.ground =     Cube(colors.GROUND, (0, 0, 0), (x, y, z-abs(self.table.limit_depth)-d_g), (w_g, w_g, d_g))
+        d_w = w_g/2
+        self.wall_back =  Cube(colors.WALL,   (0, 0, 0), (    x, y-w_g, z-abs(self.table.limit_depth)+d_w), (w_g, d_g, d_w))
+        self.wall_front = Cube(colors.WALL,   (0, 0, 0), (    x, y+w_g, z-abs(self.table.limit_depth)+d_w), (w_g, d_g, d_w))
+        self.wall_left =  Cube(colors.WALL,   (0, 0, 0), (x-w_g,     y, z-abs(self.table.limit_depth)+d_w), (d_g, w_g, d_w))
+        self.wall_right = Cube(colors.WALL,   (0, 0, 0), (x+w_g,     y, z-abs(self.table.limit_depth)+d_w), (d_g, w_g, d_w))
 
-        self.ground = Cube(colors.GROUND,   (0, 0, 0), (x, y, z-abs(table.limit_leg)-0.1), (25, 25, 0.1))
 
-        self.objects = [self.table, self.ball, self.player1, self.player2, self.ground]
+        self.objects = [self.table, self.ball, self.player1, self.player2, self.ground, self.wall_back, self.wall_front, self.wall_left, self.wall_right]
+
+        
 
     def draw(self):
-        self.angleX += 0.01
-        # self.angleY += 0.01
-        # self.angleZ += 0.01
+        # self.angleX += 0.01
         for obj in self.objects:
             obj.render()
     
     def ballHittedTopBorder(self) -> bool:
-        return self.ball.abs_y >= self.table.limit_top
+        return self.ball.abs_y + self.ball.radius >= self.table.limit_top
     def ballHittedBottomBorder(self) -> bool:
-        return self.ball.abs_y <= self.table.limit_bottom
+        return self.ball.abs_y - self.ball.radius <= self.table.limit_bottom
     def ballHittedLeftBorder(self) -> bool:
-        return self.ball.abs_x <= self.table.limit_left
+        return self.ball.abs_x - self.ball.radius <= self.table.limit_left
     def ballHittedRightBorder(self) -> bool:
-        return self.ball.abs_x >= self.table.limit_right
+        return self.ball.abs_x + self.ball.radius >= self.table.limit_right
+
     def playerTwoHitBall(self)->bool:
-        return self.ball.abs_x >= self.table.limit_right - 0.4
+        return self.ball.abs_x + self.ball.radius >= self.player2.abs_x - self.player2.w
     def playerOneHitBall(self)->bool:
-        return self.ball.abs_x <= self.table.limit_left + 0.4
+        return self.ball.abs_x - self.ball.radius <= self.player1.abs_x + self.player1.w
+
+    def isPlayer1BellowTopBorder(self, speed:float) -> bool:
+        return self.player1.abs_y + self.player1.h + speed < self.table.limit_top
+    def isPlayer1AboveBottomBorder(self, speed:float) -> bool:
+        return self.table.limit_bottom < self.player1.abs_y - self.player1.h - speed
+    def isPlayer2BellowTopBorder(self, speed:float) -> bool:
+        return self.player2.abs_y + self.player2.h + speed < self.table.limit_top
+    def isPlayer2AboveBottomBorder(self, speed:float) -> bool:
+        return self.table.limit_bottom < self.player2.abs_y - self.player2.h - speed
+    
+    def isPlayer1BellowBall(self, speed:float) -> bool:
+        return self.player1.abs_y + speed  < self.ball.abs_y - self.ball.radius
+    def isPlayer2BellowBall(self, speed:float) -> bool:
+        return self.player2.abs_y + speed  < self.ball.abs_y - self.ball.radius
