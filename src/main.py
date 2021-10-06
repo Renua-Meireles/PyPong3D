@@ -8,8 +8,8 @@ import objects, colors
 x, y, z = 0., 0., 0.
 
 
-# scene = objects.Scene((0, 90, 0), (x, y, z)) # Angulo bom pra vizualização geral
-scene = objects.Scene((0, 0, 0), (x, y, z)) # Angulo bom pra editar cordenadas
+scene = objects.Scene((0, 90, 0), (x, y, z)) # Angulo bom pra vizualização geral
+# scene = objects.Scene((0, 0, 0), (x, y, z)) # Angulo bom pra editar cordenadas
 
 
 def clearScreen():
@@ -26,11 +26,14 @@ def clearScreen():
     glEnable(GL_COLOR_MATERIAL) # Habilita material
     glEnable(GL_BLEND) # Habilitando transparência da cor RGBA
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) # Define a função de transparência
+    glMaterialfv(GL_FRONT, GL_SPECULAR, colors.LIGHT_SPECULAR)
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, colors.LIGHT_DIFFUSE)
+    glMaterialfv(GL_FRONT, GL_SHININESS, 50)
 
 
     glMatrixMode(GL_PROJECTION)
 
-    gluPerspective(45., 1., 0.1, 500.)
+    gluPerspective(45., 2., 0.1, 500.)
 
     glMatrixMode(GL_MODELVIEW)
 
@@ -44,12 +47,11 @@ def renderScene():
     global dy, dx, p1hitted
     glLoadIdentity()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    glLightfv(GL_LIGHT0, GL_POSITION, (scene.wall_back.w, scene.wall_back.w, scene.wall_back.h, .7))
-    # glLightfv(GL_LIGHT0, GL_POSITION, (scene.ball.x, scene.ball.y, scene.wall_back.h, .2))
+    glLightfv(GL_LIGHT0, GL_POSITION, (4, 4, -4, 1))
 
     gluLookAt( # Mudando a posição da camera de acordo com a posição da bola
-        # 3, 6, 8, # Camera afasta 8 unid. para frente e 5 unid. para cima da origem # Angulo bom pra vizualização geral
-        0, 0, 10, # Angulo bom pra editar cordenadas
+        3, 6, 10, # Camera afasta 8 unid. para frente e 5 unid. para cima da origem # Angulo bom pra vizualização geral
+        # 0, 0, 10, # Angulo bom pra editar cordenadas
         scene.ball.x, scene.ball.y, scene.ball.z,  # Camera olha para a bola
         0, 1, 0   # Camera olha para cima
     )
@@ -66,7 +68,7 @@ def renderScene():
         # Invert: One atacked and the other will defend
         p1hitted = not p1hitted
     
-    # PLAYER MOVEMENT
+    # PLAYERS MOVEMENT
     if p1hitted:
         step = players_speed if scene.isPlayer2BellowBall(players_speed) else -players_speed
         if scene.isPlayer2BellowTopBorder(players_speed) and step > 0:
@@ -93,9 +95,9 @@ def renderScene():
 glutInit()
 
 glutInitDisplayMode(GLUT_RGB)
-glutInitWindowSize(700, 700)
-glutInitWindowPosition(0, 0)
-glutCreateWindow("Point")
+glutInitWindowSize(1400, 700)
+glutInitWindowPosition(50, 50)
+glutCreateWindow("Pong3D")
 glutDisplayFunc(renderScene)
 glutIdleFunc(renderScene)
 
